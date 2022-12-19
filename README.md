@@ -10,8 +10,8 @@ A version for the microbit only, just tilt the board to move the player, press
 <code>game.py</code><br/>
 The second is the Kitronik Game
 https://kitronik.co.uk/products/5644-game-controller press fire button 2 on the
-controller to reveal the compass. 
-<code>gamezip.py</code><br/><br/>
+controller to reveal the compass.<br/> 
+<code>gamezip.py</code><br/>
 the third is the  Kitronik
 GameZip https://kitronik.co.uk/products/5626-game-zip-64-for-the-bbc-microbit.
 The compass is displayed on the microbit.
