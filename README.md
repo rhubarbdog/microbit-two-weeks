@@ -1,18 +1,22 @@
 <h1>Two Weeks - a Fortnight clone for microbit</h1>
-<b>
-<code>host.py</code><br/><br/>
-<code>microbit.py</code><br/><br/>
-<code>game.py</code><br/><br/>
+
+<code>host.py</code><br/>
+Tha actual game running in the ether.
+<br/>
+<code>microbit.py</code><br/>
+A version for the microbit only, just tilt the board to move the player, press
+<code>button b</code> to reveal the compass.
+<br/>
+<code>game.py</code><br/>
+The second is the Kitronik Game
+https://kitronik.co.uk/products/5644-game-controller press fire button 2 on the
+controller to reveal the compass. 
 <code>gamezip.py</code><br/><br/>
-</b>
-There a 3 control methods avaialable for 'Two Weeks' one is the microbit
-accelerometer, just tilt the board to move the player, press <code>button b
-</code> to reveal the compass.  The second is the Kitronik Game
-https://kitronik.co.uk/products/5644-game-controller the third is the  Kitronik
+the third is the  Kitronik
 GameZip https://kitronik.co.uk/products/5626-game-zip-64-for-the-bbc-microbit.
-The compass is displayed on the GameZip version on the microbit, on the Game
-press fire button 2 on the controller to reveal the compass.
-<br/><br/>
+The compass is displayed on the microbit.
+</br>
+</br>
 The game requires a version 2 microbit per player and a further version 2
 microbit to host the game. Freshly flash the microbits with <code>uflash</code>
 or copy a <code>microbit.hex</code> file directly to the microbit. Use microFS
