@@ -1,9 +1,7 @@
 <h1>Two Weeks - a Fortnight clone for microbit</h1>
 
-<br/><b><center>
-This is a genuine multi player game.  
-<center/><b/><br/>
-Reset the host first, then switch on or reset each player.  There is a thirty second period to automatically enroll for the game.  The host will be scrolling the message 'Two Weeks' and each player should be scrolling their player number.  Then 5, 4, 3, 2, 1 the game has started. You have been abandonned in a unknown world, use the compass to find the exit, first player there wins.
+<br/><b>This is a genuine multi player game.<b/><br/>
+Reset the host first, then switch on each player.  There is a thirty second period to automatically enroll for the game.  The host will be scrolling the message 'Two Weeks' and each player should be scrolling their player number.  Then 5, 4, 3, 2, 1 the game has started. You have been abandonned in a unknown world, use the compass to find the exit, first player there wins.
 <br/><br/>
 <b><code>host.py</code><b/><br/>
 Tha actual game running in the ether.
