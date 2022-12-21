@@ -1,30 +1,25 @@
 <h1>Two Weeks - a Fortnight clone for microbit</h1>
 
-<br/>
+<br/><b><center>
 This is a genuine multi player game.  
-<br/>
+<center/><b/><br/>
 Reset the host first, then switch on or reset each player.  There is a thirty second period to automatically enroll for the game.  The host will be scrolling the message 'Two Weeks' and each player should be scrolling their player number.  Then 5, 4, 3, 2, 1 the game has started. You have been abandonned in a unknown world, use the compass to find the exit, first player there wins.
-
-Playing <code>gamezip.py</code> 
-<code>microbit.py</code> and <code>game.py</code> 
-
-<code>host.py</code><br/>
+<br/><br/>
+<b><code>host.py</code><b/><br/>
 Tha actual game running in the ether.
-<br/>
-<code>microbit.py</code><br/>
+<br/><br/>
+<b><code>microbit.py</code></b><br/>
 A version for the microbit only, just tilt the board to move the player, press
 <code>button b</code> to reveal the compass.  The player fades from bright
 to dim and back again, the walls are brightest, the exit is flashing and other players a medium brightness.
-<br/>
-<code>game.py</code><br/>
+<br/><br/>
+<b><code>game.py</code><b/><br/>
 The version is for the Kitronik Game
-https://kitronik.co.uk/products/5644-game-controller press fire button 2 on the
-controller to reveal the compass.  The player fades from bright to dim, the walls are brightest, the exit is flashing and other players a medium brightness.
-<br/> 
-<code>gamezip.py</code><br/>
+https://kitronik.co.uk/products/5644-game-controller. Use the cursor keys to move the player and press fire button 2 on the controller to reveal the compass.  The player fades from bright to dim, the walls are brightest, the exit is flashing and other players a medium brightness.
+<br/><br/>
+<b><code>gamezip.py</code><b/><br/>
 This version is for the  Kitronik
-GameZip https://kitronik.co.uk/products/5626-game-zip-64-for-the-bbc-microbit.
-Guide the red sprite to the purple exit avoiding the blue walls and other players which are yellow.  The compass is displayed on the microbit.
+GameZip https://kitronik.co.uk/products/5626-game-zip-64-for-the-bbc-microbit.  Use the cursor keys to move the player the compass is displayed on the microbit.  Guide the red sprite to the purple exit avoiding the blue walls and other players which are yellow.
 </br>
 </br>
 The game requires a version 2 microbit per player and a further version 2
