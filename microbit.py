@@ -125,6 +125,7 @@ while not die:
             break
         else:
             message = eval("(" + message + ")")
+            print(player, str(message))
 
             # global message, this must be game over
             if message[0] == 0:

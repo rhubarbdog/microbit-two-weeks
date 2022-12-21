@@ -41,17 +41,19 @@ map_colors = {'p' : (20, 20, 0), ',' : (1, 4, 1), '.' : (0, 0, 0), \
 class CrashError(Exception):
     pass
 
-zip_leds = neopixel.NeoPixel(pin0, 64)
-zip_leds.clear()
 
 radio.config(channel = 14, queue = int(max_players * 1.5), length = 96)
 radio.on()
+speaker.off()
+
+zip_leds = neopixel.NeoPixel(pin0, 64)
+zip_leds.clear()
 
 def plot(xxx, yyy, color):
     global zip_leds
     zip_leds[xxx + (yyy * SCREEN)] = (color[0], color[1], color[2])
 
-
+# Begin the game
 display.scroll("Two Weeks")
 mach_id = machine.unique_id()
 radio.send("1,-1," + str(mach_id) + "," + str(SCREEN))
@@ -84,7 +86,7 @@ while True:
 if not death:
     display.scroll(" Player " + str(player + 1), wait = False, loop = True)
 
-# monitor the radio for the go message
+# monitor the radio for the 'Ready' to go message
 while not death:
     message = radio.receive()
     if message is None:
@@ -109,7 +111,6 @@ while not death:
 
 # play the game - main loop
 loops = 0
-screen = None
 winner = 0
 buttons = ""
 
@@ -117,7 +118,7 @@ while not death:
     if winner == 1:
         winner = 2
 
-    sleep(snooze)
+    screen = None
     # get all messages until my screen appears
     while True:
         message = radio.receive()
@@ -125,6 +126,7 @@ while not death:
             break
         else:
             message = eval("(" + message + ")")
+            print(player, str(message))
 
             # global message, this must be game over
             if message[0] == 0:
@@ -152,11 +154,10 @@ while not death:
                 plot(xxx, yyy, map_colors[ screen[yyy][xxx] ])
 
         plot(player_x, player_y, map_colors['P'])
+        # *error* ??
+        zip_leds[0] = (100, 100, 100)
         zip_leds.show()
-
-        if winner == 1:
-            sleep(5000)
-            
+        
         if compass == -2:
             display.show(Image.HAPPY)
         elif compass == -1:
@@ -164,7 +165,9 @@ while not death:
         else:
             display.show(Image.ALL_CLOCKS[compass])
         
-
+    if winner == 1:
+        sleep(5000)
+            
     # game over
     if winner == 2:
         break
@@ -193,6 +196,7 @@ while not death:
         loops = 0
         
     loops += 1
+    sleep(snooze)
 
 
 radio.off()

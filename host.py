@@ -245,12 +245,14 @@ while total_players > 0:
         for yyy in range(begin_y, end_y):
             line = ""
             for xxx in range(begin_x, end_x):
-                line += MAP_DICT[screen[yyy * SCREEN_X + xxx]]
+                line += MAP_DICT[screen[(yyy * SCREEN_X) + xxx]]
             for being in player_list:
+                if player_list[index_] == being:
+                    continue
+                
                 if yyy == int(being[2] + 0.5) and \
                    begin_x <= int(being[1] + 0.5) and \
-                   end_x > int(being[1] + 0.5) and \
-                   player_list.index(being) != index_:
+                   end_x > int(being[1] + 0.5):
                     line = line[:int(being[1] + 0.5) - begin_x] + \
                         MAP_DICT[4] + \
                         line[int(being[1] + 0.5) + 1 - begin_x:]
@@ -307,6 +309,7 @@ while total_players > 0:
         radio.send("2," + str(index_) + ",2,'" + message + \
                    "'," + str(player_x - begin_x) + "," + \
                    str(player_y - begin_y) + "," + str(clock))
+        print(index_, end = " | ")
 
     # game over sent the wining screen to player so quit
     if winner == -2:
@@ -359,7 +362,7 @@ while total_players > 0:
                 if not screen[int(player_list[message[2]][2] + dy + 0.5) * \
                               SCREEN_X + \
                               int(player_list[message[2]][1] + dx + 0.5)] in \
-                              (0 ,1, 3):
+                              (0 ,1 , 3):
                     collide = True
 
                 if not collide:

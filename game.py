@@ -60,6 +60,7 @@ while True:
         sleep(snooze)
     else:
         message = eval("(" + message + ")")
+        print(player, str(message))
 
         # global message 
         if message[0] == 0:
