@@ -8,10 +8,10 @@ import music
 import radio
 import machine
 
-snooze = 100
+snooze = 50
 max_players = 20
 JOY_TOLERANCE = 300
-
+SCREEN = 5
 # Message IDs
 # 2 - message from host to client
 # 1 - message from client to host
@@ -51,7 +51,7 @@ def plot(xxx, yyy, ilume):
 
 display.scroll("Two Weeks")
 mach_id = machine.unique_id()
-radio.send("1,-1," + str(mach_id) + ",5")
+radio.send("1,-1," + str(mach_id) + "," + str(SCREEN))
 
 player = None
 die = False
@@ -101,21 +101,23 @@ while not die:
                 display.scroll(message[1], wait = False)
         # message to this client not now!!!
         elif message[0] == 2 and message[1] == player:
-            raise CrashError
+            raise CrashError("Crash Error, packet out of sequence.")
 
 
 # play the game - main loop
 loops = 0
-screen = None
 winner = 0
 ilume = 7
+delta = -1
 flash = True
+buttons = ""
 
 while not die:
     if winner == 1:
         winner = 2
 
     sleep(snooze)
+    screen = None
     # get all messages until my screen appears
     while True:
         message = radio.receive()
@@ -127,7 +129,10 @@ while not die:
             # global message, this must be game over
             if message[0] == 0:
                 radio.off()
-                display.scroll(message[1], loop = True)
+                display.scroll(message[1])
+                display.show(Image.SAD_FACE)
+                while True:
+                    sleep(1000)
             # winner
             elif message[0] == 2 and message[1] == player:
                 if message[2] == 1:
@@ -139,22 +144,19 @@ while not die:
                     player_y = message[5]
                     compass = message[6]
                     screen = []
-                    for i in range(5):
-                        screen.append(message[3][i * 5: (i * 5) + 5])
+                    for i in range(SCREEN):
+                        screen.append(message[3][i * SCREEN: (i + 1) * SCREEN])
 
                     break
 
     # draw screen, compass and player
     if winner == 0 and not screen is None and not button_b.is_pressed():
-        for xxx in range(5):
-            for yyy in range(5):
+        for xxx in range(SCREEN):
+            for yyy in range(SCREEN):
                 print(xxx, yyy, screen[yyy][xxx])
                 if screen[yyy][xxx] != 'X':
                     plot(xxx, yyy, map_colors[screen[yyy][xxx]])
                 else:
-                    if loops % 10 == 0:
-                        flash = not flash
-
                     if flash:
                         plot(xxx, yyy, map_colors[screen[yyy][xxx]])
                     else:
@@ -162,11 +164,16 @@ while not die:
 
         plot(player_x, player_y, ilume)
 
-        if loops % 3 == 0:
-            ilume -= 1
-            if ilume == 2:
-                ilume = 7
+    if loops % 2 == 0:
+        ilume += delta
+        if ilume < 3:
+            delta = 1
+        if ilume > 6:
+            delta = -1
 
+    if loops % 5 == 0:
+        flash = not flash
+    
     if winner == 1:
         sleep(5000)
 
@@ -185,20 +192,24 @@ while not die:
     # detect buttons, up, down, left, right
     joy_x = accelerometer.get_x()
     joy_y = accelerometer.get_y()
-    buttons = ""
     if winner == 0:
         if joy_y < -JOY_TOLERANCE:
-            buttons += 'u'
+            if not 'u' in buttons:
+                buttons += 'u'
         if joy_y > JOY_TOLERANCE:
-            buttons += 'd'
+            if not 'd' in buttons:
+                buttons += 'd'
         if joy_x < -JOY_TOLERANCE:
-            buttons += 'l'
+            if not 'l' in buttons:
+                buttons += 'l'
         if joy_x > JOY_TOLERANCE:
-            buttons += 'r'
+            if not 'r' in buttons:
+                buttons += 'r'
 
     # send buttons to server
-    if loops % 3 == 0 and buttons != "":
+    if loops % 15 == 0 and buttons != "":
         radio.send("1,1," + str(player) + ",'" + buttons + "'")
+        buttons = ""
 
     if loops == 30000:
         loops = 0

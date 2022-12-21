@@ -11,6 +11,7 @@ import machine
 
 snooze = 50
 max_players = 20
+SCREEN = 8
 # Message IDs
 # 2 - message from host to client
 # 1 - message from client to host
@@ -48,12 +49,12 @@ radio.on()
 
 def plot(xxx, yyy, color):
     global zip_leds
-    zip_leds[xxx + (yyy * 8)] = (color[0], color[1], color[2])
+    zip_leds[xxx + (yyy * SCREEN)] = (color[0], color[1], color[2])
 
 
 display.scroll("Two Weeks")
 mach_id = machine.unique_id()
-radio.send("1,-1," + str(mach_id) + ",8")
+radio.send("1,-1," + str(mach_id) + "," + str(SCREEN))
 
 player = None
 death = False
@@ -103,13 +104,14 @@ while not death:
                 display.scroll(message[1], wait = False)
         # message to this client not now!!!
         elif message[0] == 2 and message[1] == player:
-            raise CrashError
+            raise CrashError("Crash Error, packet out of sequence.")
 
 
 # play the game - main loop
 loops = 0
 screen = None
 winner = 0
+buttons = ""
 
 while not death:
     if winner == 1:
@@ -135,8 +137,8 @@ while not death:
                     winner = 1
                 else:
                     screen = []
-                    for i in range(8):
-                        screen.append(message[3][i * 8: (i * 8) + 8])
+                    for i in range(SCREEN):
+                        screen.append(message[3][i * SCREEN: (i + 1) * SCREEN])
 
                     player_x = message[4]
                     player_y = message[5]
@@ -145,8 +147,8 @@ while not death:
 
     # draw screen, compass and player
     if not screen is None:
-        for xxx in range(8):
-            for yyy in range(8):
+        for xxx in range(SCREEN):
+            for yyy in range(SCREEN):
                 plot(xxx, yyy, map_colors[ screen[yyy][xxx] ])
 
         plot(player_x, player_y, map_colors['P'])
@@ -168,20 +170,24 @@ while not death:
         break
     
     # detect buttons, up, down, left, right
-    buttons = ""
     if winner == 0:
         if pin8.read_digital() == 0:
-            buttons += 'u'
+            if not 'u' in buttons:
+                buttons += 'u'
         if pin14.read_digital() == 0:
-            buttons += 'd'
+            if not 'd' in buttons:
+                buttons += 'd'
         if pin12.read_digital() == 0:
-            buttons += 'l'
+            if not 'l' in buttons:
+                buttons += 'l'
         if pin13.read_digital() == 0:
-            buttons += 'r'
+            if not 'r' in buttons:
+                buttons += 'r'
 
     # send buttons to server
-    if loops % 3 == 0 and buttons != "":
+    if loops % 15 == 0 and buttons != "":
         radio.send("1,1," + str(player) + ",'" + buttons + "'")
+        buttons = ""
 
     if loops == 30000:
         loops = 0

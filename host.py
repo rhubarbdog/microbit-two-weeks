@@ -3,19 +3,19 @@
 # License - MIT
 #
 
-from microbit import *
+from microbit import display, Image, sleep
 import radio
-import time
 import random
 import math
+import gc
 
 # Message IDs
-# 2 - message from xclient to xserver
-# 1 - message from xserver to xclient
-# 0 - global message to all xservers
+# 2 - message from host to client
+# 1 - message from client to host
+# 0 - global message to all clients
 
 # Messages Received
-# 1, -1 (enroll me), machine_id
+# 1, -1 (enroll me), machine_id, screen size
 # 1, 1 (button presses), player, buttons pressed
 
 # Messages Sent
@@ -28,33 +28,38 @@ import math
 #  0, Ready
 #  0, Game Over
 
-wall = ("wwwwwwwwwwwwwwwwwwww" * 5) + "ww"
-screen = ["w" + ("..,,..,,..,,..,,..,," * 5) + "w", \
-          "w" + ("..,,..,,..,,..,,..,," * 5) + "w", \
-          "w" + (",,..,,..,,..,,..,,.." * 5) + "w", \
-          "w" + (",,..,,..,,..,,..,,.." * 5) + "w"]
-screen = [wall] + (screen * 25) + [wall]
-
-root_2_1 = 0.7071067811865475244
-snooze = 50
-max_players = 20
-total_players = 0
-max_walls = 200
-exit_x = 0
-exit_y = 0
-
-radio.config(channel = 14, queue = int(max_players * 1.5), length = 96)
-radio.on()
+# Player tuple
+# ( screen size, xxx, yyy, last_x, last_y )
 
 class CrashError(Exception):
     pass
+# grass, alternate grass, wall, exit, player
+MAP_DICT = ".,wXp" 
+SCREEN_X = 102
+SCREEN_Y = 102
+screen = bytearray(SCREEN_X * SCREEN_Y)
 
+ROOT_2_1 = 0.7071067811865475244
+snooze = 50
+max_players = 20
+total_players = 0
+player_list = []
+max_walls = 200
+exit_x = 0
+exit_y = 0
+winner = -1
+loops = 0
+index = 0
+    
+radio.config(channel = 14, queue = int(max_players * 1.5), length = 96)
+radio.on()
+        
 def print_screen():
     loop = 0
     global screen
-    for yyy in range(len(screen)):
-        for xxx in range(170):
-            print(screen[yyy][xxx], end = "")
+    for yyy in range(SCREEN_Y):
+        for xxx in range(max(SCREEN_X,170)):
+            print(MAP_DICT[screen[yyy * SCREEN_X + xxx]], end = "")
         print("")
         if loop > 40:
             a = input('?')
@@ -64,9 +69,8 @@ def print_screen():
 
 def plot(xxx, yyy, item):
     global screen
-    screen = screen[:yyy] + \
-        [screen[yyy][:xxx] + item + screen[yyy][xxx + 1:]] + screen[yyy + 1:]
-
+    screen[yyy * SCREEN_X + xxx] = item
+    
 def absolute(number):
     if number < 0.0:
         return -number
@@ -80,14 +84,12 @@ def ticker(index):
 
     return (clocks[index], iii) 
             
-# enroll players for 2 minutes
-begin = time.ticks_ms()
+# enroll players for 30 seconds
+loops = 0
 display.scroll('Two Weeks', wait = False, loop = True)
-while True:
+while loops < 600:
     message = radio.receive()
-    if message is None:
-        sleep(snooze)
-    else:
+    if not message is None:
         message = eval("(" + message + ")")
         # enrollment message from a client
         if message[0] == 1 and message[1] == -1:
@@ -97,29 +99,47 @@ while True:
             else:
                 radio.send("2," + str(total_players) + "," + str(message[2]))
                 total_players += 1
-                
-    two_mins = 0.5 * 1000 * 60
-    difference = time.ticks_diff(time.ticks_ms(), begin)
-    if  difference >= two_mins:
-        break
+                player_list.append((message[3], 0.0, 0.0, -2000.0, -2000.0))
 
-# populate map with some walls
+    sleep(snooze)
+    loops += 1
+    
+# initialise map - draw the grass
+flipflop = 0
+for yyy in range(1, SCREEN_Y - 1):
+    for xxx in range(1, SCREEN_X - 1):
+        if ((xxx // 2)  % 2 == 0 and (yyy // 2) % 2 == 0) or \
+           ((xxx // 2)  % 2 != 0 and (yyy // 2) % 2 != 0):
+            plot(xxx, yyy, 0)
+        else:
+            plot(xxx, yyy, 1)
+
+
+# draw walls round the edge
+for i in range(SCREEN_Y):
+    plot(0, i, 2)
+    plot(SCREEN_X - 1, i, 2)
+for i in range(SCREEN_X):
+    plot(i, 0, 2)
+    plot(i, SCREEN_Y - 1, 2)
+    
+# and add some random walls
 for _ in range(20 + random.randrange(max_walls - 20)):
     length = random.randrange(10) + 1
-    xxx = random.randrange(len(screen[0]))
-    yyy = random.randrange(len(screen))
+    xxx = random.randrange(SCREEN_X)
+    yyy = random.randrange(SCREEN_Y)
     vertical = random.choice((True, False))
 
-    if vertical and yyy + length >= len(screen):
-        yyy = len(screen) - length
-    elif not vertical and xxx + length >= len(screen[0]):
-        xxx = len(screen[0]) - length
+    if vertical and yyy + length >= SCREEN_Y:
+        yyy = SCREEN_Y - length
+    elif not vertical and xxx + length >= SCREEN_X:
+        xxx = SCREEN_X - length
 
     for i in range(length):
         if vertical:
-            plot(xxx, yyy + i, 'w')
+            plot(xxx, yyy + i, 2)
         else:
-            plot(xxx + i, yyy, 'w')
+            plot(xxx + i, yyy, 2)
             
 # place the exit
 size = 30
@@ -127,19 +147,18 @@ while True:
     xxx = random.randrange(size)
     yyy = random.randrange(size)
 
-    xxx += (len(screen[0]) - size) // 2
-    yyy += (len(screen) - size) //  2
+    xxx += (SCREEN_X - size) // 2
+    yyy += (SCREEN_Y - size) //  2
 
-    if screen[yyy][xxx] in '.,':
-        plot(xxx, yyy, 'X')
+    if screen[yyy * SCREEN_X + xxx] in (0, 1):
+        plot(xxx, yyy, 3)
         exit_x = xxx
         exit_y = yyy
         break
 
 # calculate player starting positions
 size = 15
-player_list = []
-for _ in range(total_players):
+for player in range(total_players):
     while True:
         xxx = random.random() * (size  + 1) * random.choice((1, -1))
         yyy = random.random() * (size  + 1) * random.choice((1, -1))
@@ -148,80 +167,106 @@ for _ in range(total_players):
             continue
 
         if xxx < 0:
-            xxx = len(screen[0]) - 1 + xxx
+            xxx = SCREEN_X - 1 + xxx
+    
         if yyy < 0:
-            yyy = len(screen) - 1 + yyy
+            yyy = SCREEN_Y - 1 + yyy
 
-        if screen[int(yyy + 0.5)][int(xxx + 0.5)] in '.,':
-            player_list.append((xxx, yyy))
-            break
+        # ensure all players are on the grass 
+        if not screen[int(yyy + 0.5) * SCREEN_X + int(xxx + 0.5)] in (0, 1):
+            continue
+
+        # and in different squares
+        collide = False
+        for i in range(player):
+            if int(player_list[i][1] + 0.5) == int(xxx + 0.5) and \
+               int(player_list[i][2] + 0.5) == int(yyy + 0.5):
+                collide = True
+                break
+
+        if collide:
+            continue
+
+        player_list = player_list[:player] + \
+            [(player_list[player][0], xxx, yyy, \
+              player_list[player][3], player_list[player][4])] + \
+            player_list[player:]    
+        break
 
 # Play the game
+gc.collect()
 if total_players > 0:
     radio.send("0,'Ready'")
 
-winner = -1
-loops = 0
-index = 0
-players_todo = []
-for i in range(total_players):
-    players_todo.append(i)
-    
+    for i in range(5):
+        display.show(str(5 - i))
+        sleep(1000)
+    sleep(50)
+
+    players_todo = []
+    for i in range(total_players):
+        players_todo.append(i)
+
 while total_players > 0:
     if loops % 10 == 0:
         image, index = ticker(index)
     display.show(image)
     sleep(snooze)
+    gc.collect()
     
     if winner != -1:
         winner = -2
 
-     # produce a screen for every player and send it out
-    for index in players_todo:
-        tmp = player_list[index]
-        player_x = int(tmp[0] + 0.5)
-        player_y = int(tmp[1] + 0.5)
+    # produce a screen for every player and send it out
+    for index_ in players_todo:
+        print(index_, end = ', ')
+    
+        player_x = int(player_list[index_][1] + 0.5)
+        player_y = int(player_list[index_][2] + 0.5)
 
-        begin_x = player_x - 4
-        begin_y = player_y - 4
+        begin_x = player_x - player_list[index_][0] // 2
+        begin_y = player_y - player_list[index_][0] // 2
+    
         if begin_x < 0:
             begin_x = 0
         if begin_y < 0:
             begin_y = 0
 
-        end_x = begin_x + 8
-        end_y = begin_y + 8
-        if end_x >= len(screen[0]):
-            end_x = len(screen[0])
-            begin_x = end_x - 8
-        if end_y >= len(screen):
-            end_y = len(screen)
-            begin_y = end_y - 8
+        end_x = begin_x + player_list[index_][0]
+        end_y = begin_y + player_list[index_][0]
+        if end_x > SCREEN_X:
+            end_x = SCREEN_X
+            begin_x = end_x - player_list[index_][0]
+        if end_y > SCREEN_Y:
+            end_y = SCREEN_Y
+            begin_y = end_y - player_list[index_][0]
 
         message = ""
-        added = -1
         for yyy in range(begin_y, end_y):
-            line = screen[yyy][begin_x: end_x]
+            line = ""
+            for xxx in range(begin_x, end_x):
+                line += MAP_DICT[screen[yyy * SCREEN_X + xxx]]
             for being in player_list:
-                if yyy == int(being[1] + 0.5) and \
-                   begin_x <= int(being[0] + 0.5) and \
-                   end_x > int(being[0] + 0.5) and \
-                   player_list.index(being) != index:
-                    added = index
-                    line = line[:int(being[0] + 0.5) - begin_x] + 'p' + \
-                        line[int(being[0] + 0.5) + 1 - begin_x:]
+                if yyy == int(being[2] + 0.5) and \
+                   begin_x <= int(being[1] + 0.5) and \
+                   end_x > int(being[1] + 0.5) and \
+                   player_list.index(being) != index_:
+                    line = line[:int(being[1] + 0.5) - begin_x] + \
+                        MAP_DICT[4] + \
+                        line[int(being[1] + 0.5) + 1 - begin_x:]
             message += line
-            
-        # calculate compass
+
+        # calculate compass and detect Winner
         diff_x = exit_x - player_x
         diff_y = exit_y - player_y
 
         if diff_x == 0 and diff_y == 0:
             clock = -2
             if winner == -1:
-                radio.send("2," + str(index) + ",1,'Winner'")
-                winner = index
-        elif absolute(diff_x) < 4 and absolute(diff_y) < 4:
+                radio.send("2," + str(index_) + ",1,'Winner'")
+                winner = index_
+        elif absolute(diff_x) < player_list[index_][0] / 2 and \
+             absolute(diff_y) < player_list[index_][0] / 2:
             clock = -1
         elif diff_x == 0:
             if diff_y < 0:
@@ -240,9 +285,9 @@ while total_players > 0:
                 
             last_ratio = 0
             theta = 0
-            for i in range(5, 90, 5):
-                theta = i
-                tangent = math.tan(math.radians(theta))
+            for phi in range(5, 90, 5):
+                theta = phi
+                tangent = math.tan(math.radians(phi))
                 if ratio >= last_ratio and ratio <= tangent:
                     break
                 last_ratio = tangent
@@ -257,20 +302,23 @@ while total_players > 0:
                 clock = int(4 * theta / 90)
             else:
                 clock = 6 - int(4 * theta / 90)
-                        
-        radio.send("2," + str(player_list.index(tmp)) + ",2,'" + message + \
+
+        # send out the screen packet *error*??
+        radio.send("2," + str(index_) + ",2,'" + message + \
                    "'," + str(player_x - begin_x) + "," + \
                    str(player_y - begin_y) + "," + str(clock))
 
-    # game over sent the wining screen to xserver so quit
+    # game over sent the wining screen to player so quit
     if winner == -2:
         radio.send("0, 'Game Over'")
         break
-    # collect and process all clients keystrokes
+    
     players_todo = []
+    movers = False
     if winner != -1:
         players_todo.append(winner)
 
+    # collect and process all clients keystrokes
     while True:
         message = radio.receive()
         if message is None:
@@ -279,7 +327,7 @@ while total_players > 0:
             message = eval("(" + message + ")")
             
             if message[0] == 1 and message[1] == 1:
-                player = player_list[message[2]]
+            
                 dx = 0
                 dy = 0
                 if 'u' in message[3] and 'd' in message[3]:
@@ -297,26 +345,29 @@ while total_players > 0:
                     dx = 1
 
                 if dy != 0 and dx != 0:
-                    dy *= root_2_1
-                    dx *= root_2_1
+                    dy *= ROOT_2_1
+                    dx *= ROOT_2_1
 
-                if int(player[0] + dx + 0.5) < 0 or \
-                   int(player[0] + dx + 0.5) > len(screen[0]) - 1:
+                if int(player_list[message[2]][1] + dx + 0.5) < 0 or \
+                   int(player_list[message[2]][1] + dx + 0.5) > SCREEN_X - 1:
                     dx = 0
-                if int(player[1] + dy + 0.5) < 0 or \
-                   int(player[1] + dy + 0.5) > len(screen) - 1:
+                if int(player_list[message[2]][2] + dy + 0.5) < 0 or \
+                   int(player_list[message[2]][2] + dy + 0.5) > SCREEN_Y - 1:
                     dy = 0
 
                 collide = False
-                if not screen[int(player[1] + dy + 0.5)] \
-                   [int(player[0] + dx + 0.5)] in ',.X':
+                if not screen[int(player_list[message[2]][2] + dy + 0.5) * \
+                              SCREEN_X + \
+                              int(player_list[message[2]][1] + dx + 0.5)] in \
+                              (0 ,1, 3):
                     collide = True
 
                 if not collide:
                     for being in player_list:
-                        if int(being[0] + 0.5) == int(player[0] + dx + 0.5) \
-                           and int(being[1] + 0.5) == \
-                           int(player[1] + dy + 0.5) and \
+                        if int(being[1] + 0.5) == \
+                           int(player_list[message[2]][1] + dx + 0.5) and \
+                           int(being[2] + 0.5) == \
+                           int(player_list[message[2]][2] + dy + 0.5) and \
                            player_list.index(being) != message[2]:
                             collide = True
                             break
@@ -324,23 +375,55 @@ while total_players > 0:
                 if collide:
                     dx = 0
                     dy = 0
+
+                if dy != 0 or dx != 0:
+                    movers = True
                     
-                for i in players_todo:
-                    if added ==  i:
-                        added = -1
-                        break
-                    
-                i = player_list.index(player)
-                if not (winner != -1 and winner == i) or added != -1:
-                    players_todo.append(i)
-                    player_list = player_list[:i] + \
-                        [[player[0] + dx, player[1] + dy]] +\
-                        player_list[i + 1:]
+                if not (winner != -1 and winner == message[2]):
+                    players_todo.append(message[2])
+                    screen_size = player_list[message[2]][0]
+                    xxx = player_list[message[2]][1]
+                    yyy = player_list[message[2]][2]
+                    last_x = player_list[message[2]][3]
+                    last_y = player_list[message[2]][4]
+                    if dx != 0 or dy != 0:
+                        last_x = xxx
+                        last_y = yyy
+                        xxx += dx
+                        yyy += dy
+                    player_list = player_list[:message[2]] + \
+                        [(screen_size, xxx, yyy, last_x, last_y)] + \
+                        player_list[message[2]:]
+
+            # game started, enrollment too late 
             elif message[0] == 1 and message[1] == -1:
                 radio.send("2,-2," + str(message[2]) + \
                            ", ' Game already started'")
             else:
-                raise CrashError
+                raise CrashError("Crash Error, packet out of sequence.")
+
+    # make other players appear and disapear from another player's screen
+    if movers:
+        for index_ in range(total_players):
+            if index_ in players_todo:
+                continue
+
+            square = player_list[index_][0] * player_list[index_][0]
+
+            for being in player_list[index_:]:
+                dx = player_list[index_][1] - being[1]
+                dy = player_list[index_][2] - being[2]
+
+                if (dx * dx) + (dy * dy) <= square:
+                    players_todo.append(index_)
+                    continue
+
+                dx = player_list[index_][3] - being[1]
+                dy = player_list[index_][4] - being[2]
+
+                if (dx * dx) + (dy * dy) > square:
+                    players_todo.append(index_)
+                    continue
 
     if loops == 20000:
         loops = 0
