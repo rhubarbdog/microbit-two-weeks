@@ -5,7 +5,7 @@
 
 from microbit import *
 import neopixel
-import music
+#import music
 import radio
 import machine
 
@@ -46,6 +46,9 @@ radio.config(channel = 14, queue = int(max_players * 1.5), length = 96)
 radio.on()
 speaker.off()
 
+pin0.write_digital(1)
+sleep(20)
+pin0.write_digital(0)
 zip_leds = neopixel.NeoPixel(pin0, 64)
 zip_leds.clear()
 
@@ -77,7 +80,7 @@ while True:
             if str(mach_id) == str(message[2]):
                 player = message[1]
                 if player == -1 or player == -2:
-                    music.play(["c2:2"], pin2, wait = False)
+                    #music.play(["c2:2"], pin2, wait = False)
                     display.scroll(message[3])
                     death = True
                     break
@@ -98,7 +101,7 @@ while not death:
         if message[0] == 0:
             if message[1] == "Ready":
                 for i in range(5):
-                    music.play(["c4:2"], pin2, False)
+                    #music.play(["c4:2"], pin2, False)
                     display.show(str(5 - i))
                     sleep(1000)
                 break
@@ -134,7 +137,7 @@ while not death:
                 break
             elif message[0] == 2 and message[1] == player: 
                 if message[2] == 1:
-                    music.play(music.POWER_UP, pin2, False)
+                    #music.play(music.POWER_UP, pin2, False)
                     display.scroll(message[3], wait = False)
                     winner = 1
                 else:
@@ -156,7 +159,6 @@ while not death:
         plot(player_x, player_y, map_colors['P'])
         # *error* ??
         zip_leds[0] = (100, 100, 100)
-        zip_leds.show()
         
         if compass == -2:
             display.show(Image.HAPPY)
@@ -164,6 +166,8 @@ while not death:
             display.show(Image.SQUARE)
         else:
             display.show(Image.ALL_CLOCKS[compass])
+
+    zip_leds.show()
         
     if winner == 1:
         sleep(5000)
