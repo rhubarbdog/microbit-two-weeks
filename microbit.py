@@ -41,13 +41,29 @@ map_colors = {'p' : 3, ',' : 1, '.' : 0, 'w' : 9, 'X' : 5}
 class CrashError(Exception):
     pass
 
+def plot(xxx, yyy, ilume):
+    display.set_pixel(xxx, yyy, ilume)
+
+def draw_screen(screen):
+    global map_colors
+
+    save_x = None
+    save_y = None
+    
+    for xxx in range(SCREEN):
+        for yyy in range(SCREEN):
+            if screen[yyy][xxx] != 'X':
+                plot(xxx, yyy, map_colors[screen[yyy][xxx]])
+            else:
+                save_x = xxx
+                save_y = yyy
+
+    return (save_x, save_y)
+
 
 radio.config(channel = 14, queue = int(max_players * 1.5), length = 96)
 radio.on()
 speaker.on()
-
-def plot(xxx, yyy, ilume):
-    display.set_pixel(xxx, yyy, ilume)
 
 display.scroll("Two Weeks")
 mach_id = machine.unique_id()
@@ -101,17 +117,28 @@ while not die:
                 display.scroll(message[1], wait = False)
         # message to this client not now!!!
         elif message[0] == 2 and message[1] == player:
-            raise CrashError("Crash Error, packet out of sequence.")
+            display.scroll("Game server, 'Ready' skipped")
+            raise CrashError("CrashError - packet out of sequence.")
 
 
 # play the game - main loop
+
+xxx = 0
+yyy = 0
+player_x = 0
+player_y = 0
 loops = 0
 winner = 0
 ilume = 7
 delta = -1
 flash = True
 buttons = ""
-
+save_scr = None
+screen_num = None
+compass = None
+exit_x = None
+exit_y = None
+        
 while not die:
     if winner == 1:
         winner = 2
@@ -149,21 +176,41 @@ while not die:
                         screen.append(message[3][i * SCREEN: (i + 1) * SCREEN])
 
                     break
+                
+    if not screen is None:
+        save_scr = screen
 
     # draw screen, compass and player
     if winner == 0 and not screen is None and not button_b.is_pressed():
-        for xxx in range(SCREEN):
-            for yyy in range(SCREEN):
-                print(xxx, yyy, screen[yyy][xxx])
-                if screen[yyy][xxx] != 'X':
-                    plot(xxx, yyy, map_colors[screen[yyy][xxx]])
-                else:
-                    if flash:
-                        plot(xxx, yyy, map_colors[screen[yyy][xxx]])
-                    else:
-                        plot(xxx, yyy, 0)
+        screen_num = 0
+        exit_x, exit_y = draw_screen(screen)
+        
+    if winner == 1:
+        sleep(5000)
+
+    if not compass is None and (button_b.is_pressed() or winner == 1):
+        if winner != 1:
+            screen_num = 1
+        if compass == -2:
+            display.show(Image.HAPPY)
+        elif compass == -1:
+            display.show(Image.SQUARE)
+        else:
+            display.show(Image.ALL_CLOCKS[compass])
+        
+    if screen_num == 0 and winner == 0:
+        if not exit_x is None and not exit_y is None:
+            if flash:
+                plot(exit_x, exit_y, map_colors['X'])
+            else:
+                plot(exit_x, exit_y, 0)
 
         plot(player_x, player_y, ilume)
+
+    if screen_num == 1 and not button_b.is_pressed() and winner != 1:
+        if not save_scr is None:
+            draw_screen(save_scr)
+            screen_num = 0
 
     if loops % 2 == 0:
         ilume += delta
@@ -174,18 +221,7 @@ while not die:
 
     if loops % 5 == 0:
         flash = not flash
-    
-    if winner == 1:
-        sleep(5000)
 
-    if button_b.is_pressed() or winner == 1:
-        if compass == -2:
-            display.show(Image.HAPPY)
-        elif compass == -1:
-            display.show(Image.SQUARE)
-        else:
-            display.show(Image.ALL_CLOCKS[compass])
-        
     # game over
     if winner == 2:
         break

@@ -21,12 +21,7 @@ This version is for the  Kitronik
 GameZip https://kitronik.co.uk/products/5626-game-zip-64-for-the-bbc-microbit.  Use the cursor keys to move the player the compass is displayed on the microbit.  Guide the red sprite to the purple exit avoiding the blue walls and other players which are yellow.
 </br>
 </br>
-The game requires a version 2 microbit per player and a further version 2
-microbit to host the game. Freshly flash the microbits with <code>uflash</code>
-or copy a <code>microbit.hex</code> file directly to the microbit. Use microFS
-or the file transfer facility in <code>mu-editor</code> to copy to programs
-over. Each players microbit runs the program <code>gamezip.py</code>,
-<code>game.py</code> or <code>microbit.py</code> depending on which controller they have.  Copy the correct program with the following commands.
+The game requires a version 2 microbit per player and a further version 2 microbit to host the game.  There are two installation methods.  Directly copy `host.hex` to one micro bit and then `microbit.hex`, `game.hex` or `gamezip.hex` to each player's microbit.  Or freshly flash the microbits using either <code>uflash</code> or copy <code>micropython.hex</code> file directly to the microbit. Then use microFS or the file transfer facility in <code>mu-editor</code> to copy to programs to each microbit.  Each player's microbit runs the program <code>gamezip.py</code>, <code>game.py</code> or <code>microbit.py</code> depending on which controller they have.  Copy the correct program with the following commands.
 <br/>
 <br/>
 <code>ufs put microbit.py main.py</code><br/><br/>
@@ -45,13 +40,14 @@ There currently are a few issues with MicroPython and version 2 microbit's.  Try
 <li>The Weather.</li>
 <li>Sound Effects</li>
 <li>Enemies controlled by the microbit<li/>
-<list/>
+</list>
 
 <h2>Future forks for this repository</h2>
 <list>
 <li>Call of Duty, one side the Allies the other the Nazi's.</li>
 <li>Luigi's Mansion, one player Luigi with his torch, the rest ghosts.</li>
-<li>Tron or light bikes<li/>
-<li>Multi player snake<li/>
-<li>World of War Craft<li/>
+<li>Tron on light bikes</li>
+<li>Multi player snake</li>
+<li>World of War Craft</li>
 <li>Orienteering, either all start in the same location and get the flags in order or all start in random locations collecting the flags as you find them.</li>
+</list>
