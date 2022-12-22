@@ -109,7 +109,8 @@ while not death:
                 display.scroll(message[1], wait = False)
         # message to this client not now!!!
         elif message[0] == 2 and message[1] == player:
-            raise CrashError("Crash Error, packet out of sequence.")
+            display.scroll("Game server, 'Ready' skipped")
+            raise CrashError("CrashError - packet out of sequence.")
 
 
 # play the game - main loop
@@ -158,7 +159,10 @@ while not death:
 
         plot(player_x, player_y, map_colors['P'])
         zip_leds.show()
-                
+
+        if winner == 1:
+            sleep(5000)
+
         if compass == -2:
             display.show(Image.HAPPY)
         elif compass == -1:
@@ -166,9 +170,6 @@ while not death:
         else:
             display.show(Image.ALL_CLOCKS[compass])
         
-    if winner == 1:
-        sleep(5000)
-            
     # game over
     if winner == 2:
         break

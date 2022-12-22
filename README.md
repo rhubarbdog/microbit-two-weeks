@@ -1,8 +1,8 @@
 <h1>Two Weeks - a Fortnight clone for microbit</h1>
 
-<b><center>This is a genuine multi-player game.</center></b><br/>
+<b>This is a genuine multi-player game</b> -  for version 2 microbit's<br/>
 
-Reset the host first, then switch on each player.  There is a thirty second period to automatically enroll for the game.  The host will be scrolling the message 'Two Weeks' and each player should be scrolling their player number.  Then 5, 4, 3, 2, 1 the game has started. You have been abandonned in a unknown world, use the compass to find the exit, first player there wins.
+Reset the host first, then switch on each player.  There is a thirty second period to automatically enroll for the game.  The host will be scrolling the message 'Two Weeks - host' and each player should be scrolling their player number.  Then 5, 4, 3, 2, 1 the game has started. You have been abandonned in a unknown world, use the compass to find the exit, first player there wins.
 <br/><br/>
 <b><code>host.py</code></b><br/>
 Tha actual game running in the ether.
@@ -37,13 +37,21 @@ The final microbit which hosts the game running program <code>host.py</code>
 copy it to the microbit as follows.<br/><br/>
 <code>ufs put host.py main.py</code><br/><br/>
 
-There currently are issues with version 2 microbits try the `microbit.hex` in this repository whichi is a copy of micro python.
+There currently are a few issues with MicroPython and version 2 microbit's.  Try the `microbit.hex` in this repository which is a copy of MicroPython.
 
 <h2>Futures for Two Weeks</h2>
-A gun with limitted bullets.<br/>
-The Weather.<br/>
+<list>
+<li>A gun with limitted bullets.</li>
+<li>The Weather.</li>
+<li>Sound Effects</li>
+<li>Enemies controlled by the microbit<li/>
+<list/>
 
 <h2>Future forks for this repository</h2>
-Call of Duty, one side the Allies the other the Nazi's.<br/>
-Luigi's Mansion, one player Luigi with his torch, the rest ghosts.<br/>
-Orienteering, either all start in the same location and get the flags in order or all start in random locations collecting the flags as you find them.<br/>
+<list>
+<li>Call of Duty, one side the Allies the other the Nazi's.</li>
+<li>Luigi's Mansion, one player Luigi with his torch, the rest ghosts.</li>
+<li>Tron or light bikes<li/>
+<li>Multi player snake<li/>
+<li>World of War Craft<li/>
+<li>Orienteering, either all start in the same location and get the flags in order or all start in random locations collecting the flags as you find them.</li>

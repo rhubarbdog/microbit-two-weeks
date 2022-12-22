@@ -34,7 +34,12 @@ import gc
 class CrashError(Exception):
     pass
 # grass, alternate grass, wall, exit, player
-MAP_DICT = ".,wXp" 
+MAP_DICT = ".,wXp"
+map_grass  = 0
+map_lawn   = 1
+map_wall   = 2
+map_exit   = 3
+map_others = 4
 SCREEN_X = 102
 SCREEN_Y = 102
 screen = bytearray(SCREEN_X * SCREEN_Y)
@@ -86,7 +91,7 @@ def ticker(index):
             
 # enroll players for 30 seconds
 loops = 0
-display.scroll('Two Weeks', wait = False, loop = True)
+display.scroll('.Two Weeks - host.', wait = False, loop = True)
 while loops < 600:
     message = radio.receive()
     if not message is None:
@@ -110,17 +115,17 @@ for yyy in range(1, SCREEN_Y - 1):
     for xxx in range(1, SCREEN_X - 1):
         if ((xxx // 2)  % 2 == 0 and (yyy // 2) % 2 == 0) or \
            ((xxx // 2)  % 2 != 0 and (yyy // 2) % 2 != 0):
-            plot(xxx, yyy, 0)
+            plot(xxx, yyy, map_grass)
         else:
-            plot(xxx, yyy, 1)
+            plot(xxx, yyy, map_lawn)
 
 
 # draw walls round the edge
 for i in range(SCREEN_Y):
-    plot(0, i, 2)
+    plot(0, i, map_wall)
     plot(SCREEN_X - 1, i, 2)
 for i in range(SCREEN_X):
-    plot(i, 0, 2)
+    plot(i, 0, map_wall)
     plot(i, SCREEN_Y - 1, 2)
     
 # and add some random walls
@@ -137,9 +142,9 @@ for _ in range(20 + random.randrange(max_walls - 20)):
 
     for i in range(length):
         if vertical:
-            plot(xxx, yyy + i, 2)
+            plot(xxx, yyy + i, map_wall)
         else:
-            plot(xxx + i, yyy, 2)
+            plot(xxx + i, yyy, map_wall)
             
 # place the exit
 size = 30
@@ -150,8 +155,8 @@ while True:
     xxx += (SCREEN_X - size) // 2
     yyy += (SCREEN_Y - size) //  2
 
-    if screen[yyy * SCREEN_X + xxx] in (0, 1):
-        plot(xxx, yyy, 3)
+    if screen[yyy * SCREEN_X + xxx] in (map_lawn, map_grass):
+        plot(xxx, yyy, map_exit)
         exit_x = xxx
         exit_y = yyy
         break
@@ -160,20 +165,27 @@ while True:
 size = 15
 for player in range(total_players):
     while True:
-        xxx = random.random() * (size  + 1) * random.choice((1, -1))
-        yyy = random.random() * (size  + 1) * random.choice((1, -1))
 
-        if xxx < -size or xxx > size or yyy < -size or yyy > size:
-            continue
-
-        if xxx < 0:
-            xxx = SCREEN_X - 1 + xxx
-    
-        if yyy < 0:
-            yyy = SCREEN_Y - 1 + yyy
+        if random.choice(('x', 'y')) == 'x':
+            yyy = random.random() * (size  + 1) * random.choice((1, -1))
+            if yyy < -size or yyy > size:
+                continue
+            
+            if yyy < 0:
+                yyy = SCREEN_Y - 1 + yyy
+            xxx = random.random() * SCREEN_X
+        else:
+            xxx = random.random() * (size  + 1) * random.choice((1, -1))
+            if xxx < -size or xxx > size:
+                continue
+            
+            if xxx < 0:
+                xxx = SCREEN_X - 1 + xxx
+            yyy = random.random() * SCREEN_Y
 
         # ensure all players are on the grass 
-        if not screen[int(yyy + 0.5) * SCREEN_X + int(xxx + 0.5)] in (0, 1):
+        if not screen[int(yyy + 0.5) * SCREEN_X + int(xxx + 0.5)] in \
+           (map_lawn, map_grass):
             continue
 
         # and in different squares
@@ -187,10 +199,9 @@ for player in range(total_players):
         if collide:
             continue
 
-        player_list = player_list[:player] + \
-            [(player_list[player][0], xxx, yyy, \
-              player_list[player][3], player_list[player][4])] + \
-            player_list[player:]    
+        player_list[player] =(player_list[player][0], xxx, yyy, \
+              player_list[player][3], player_list[player][4])
+        
         break
 
 # Play the game
@@ -254,7 +265,7 @@ while total_players > 0:
                    begin_x <= int(being[1] + 0.5) and \
                    end_x > int(being[1] + 0.5):
                     line = line[:int(being[1] + 0.5) - begin_x] + \
-                        MAP_DICT[4] + \
+                        MAP_DICT[map_others] + \
                         line[int(being[1] + 0.5) + 1 - begin_x:]
             message += line
 
@@ -287,7 +298,7 @@ while total_players > 0:
                 
             last_ratio = 0
             theta = 0
-            for phi in range(5, 90, 5):
+            for phi in range(15, 90, 15):
                 theta = phi
                 tangent = math.tan(math.radians(phi))
                 if ratio >= last_ratio and ratio <= tangent:
@@ -394,9 +405,8 @@ while total_players > 0:
                         last_y = yyy
                         xxx += dx
                         yyy += dy
-                    player_list = player_list[:message[2]] + \
-                        [(screen_size, xxx, yyy, last_x, last_y)] + \
-                        player_list[message[2]:]
+                    player_list[message[2]] = (screen_size, xxx, yyy, \
+                                               last_x, last_y)
 
             # game started, enrollment too late 
             elif message[0] == 1 and message[1] == -1:
@@ -421,8 +431,8 @@ while total_players > 0:
                     players_todo.append(index_)
                     continue
 
-                dx = player_list[index_][3] - being[1]
-                dy = player_list[index_][4] - being[2]
+                dx = player_list[index_][1] - being[3]
+                dy = player_list[index_][2] - being[4]
 
                 if (dx * dx) + (dy * dy) > square:
                     players_todo.append(index_)
