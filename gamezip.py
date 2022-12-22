@@ -157,17 +157,14 @@ while not death:
                 plot(xxx, yyy, map_colors[ screen[yyy][xxx] ])
 
         plot(player_x, player_y, map_colors['P'])
-        # *error* ??
-        zip_leds[0] = (100, 100, 100)
-        
+        zip_leds.show()
+                
         if compass == -2:
             display.show(Image.HAPPY)
         elif compass == -1:
             display.show(Image.SQUARE)
         else:
             display.show(Image.ALL_CLOCKS[compass])
-
-    zip_leds.show()
         
     if winner == 1:
         sleep(5000)
