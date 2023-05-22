@@ -117,6 +117,7 @@ while not death:
 loops = 0
 winner = 0
 buttons = ""
+compass = None
 
 while not death:
     if winner == 1:
